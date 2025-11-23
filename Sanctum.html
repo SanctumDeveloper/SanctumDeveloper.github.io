@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sanctum: Faith Quest v2</title>
+  <meta name="description" content="A private, offline Catholic companion for young believers.">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Sanctum%22,%22short_name%22:%22Sanctum%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f8f3e6%22,%22theme_color%22:%22%238b0000%22,%22icons%22:[{%22src%22:%22data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='80'>✝</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+  <style>
+    /* ===== BIBLE-ILLUMINATED MANUSCRIPT THEME ===== */
+    :root {
+      --parchment: #f8f3e6;
+      --ink: #2c1810;
+      --gold: #d4af37;
+      --crimson: #8b0000;
+      --olive: #556b2f;
+      --navy: #0a1929;
+      --shadow: rgba(0,0,0,0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Cinzel', 'Palatino', 'Times New Roman', serif;
+    }
+
+    body {
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(139, 0, 0, 0.02) 0%, transparent 20%),
+        var(--parchment);
+      color: var(--ink);
+      line-height: 1.6;
+      padding-bottom: 40px;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+
+    header {
+      text-align: center;
+      padding: 25px 0 15px;
+      position: relative;
+      margin-bottom: 25px;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--gold);
+      border-radius: 2px;
+    }
+
+    h1 {
+      font-size: 2.6em;
+      color: var(--crimson);
+      text-shadow: 1px 1px 2px var(--shadow);
+      letter-spacing: 1.5px;
+      margin-top: 10px;
+    }
+
+    .profile-header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin: 15px 0;
+    }
+
+    .profile-pic {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: white;
+      border: 3px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 8px var(--shadow);
+    }
+
+    .xp-display {
+      text-align: center;
+      margin: 12px 0;
+      font-size: 1.05em;
+      color: var(--olive);
+      font-weight: 600;
+    }
+
+    /* XP ANIMATION */
+    .xp-popup {
+      position: fixed;
+      top: 25%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(212, 175, 55, 0.95);
+      color: white;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 1.2em;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      animation: xpFloat 1.3s forwards;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    @keyframes xpFloat {
+      0% { opacity: 0; transform: translate(-50%, 0); }
+      25% { opacity: 1; }
+      75% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -110px); }
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 20px 0;
+    }
+
+    .tab-btn {
+      padding: 10px 18px;
+      background: transparent;
+      border: 1px solid var(--ink);
+      color: var(--ink);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 1em;
+      border-radius: 6px;
+      transition: all 0.25s;
+    }
+
+    .tab-btn:hover {
+      background: rgba(212, 175, 55, 0.2);
+    }
+
+    .tab-btn.active {
+      background: var(--gold);
+      color: white;
+      border-color: var(--gold);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 22px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    h2 {
+      color: var(--crimson);
+      margin-bottom: 18px;
+      font-size: 1.8em;
+      border-bottom: 1px dashed var(--olive);
+      padding-bottom: 8px;
+    }
+
+    /* PROFILE CUSTOMIZATION */
+    .profile-customize {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    #saint-select {
+      padding: 10px;
+      margin: 12px 0;
+      font-size: 1em;
+      border: 1px solid var(--ink);
+      border-radius: 6px;
+      background: white;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    /* QUESTS */
+    .quest-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      margin: 12px 0;
+      background: white;
+      border-left: 4px solid var(--gold);
+      border-radius: 0 6px 6px 0;
+    }
+
+    .quest-check {
+      margin-right: 15px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+
+    /* CALENDAR */
+    .calendar-container {
+      overflow-x: auto;
+    }
+
+    .calendar {
+      min-width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .calendar th {
+      background: var(--crimson);
+      color: white;
+      padding: 10px;
+      font-weight: bold;
+    }
+
+    .calendar td {
+      padding: 12px 8px;
+      text-align: center;
+      border: 1px solid #e0d7c5;
+      position: relative;
+    }
+
+    .feast-day {
+      background-color: #fdf6e3;
+      font-weight: bold;
+      color: var(--crimson);
+      cursor: pointer;
+    }
+
+    .feast-day::after {
+      content: "★";
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      font-size: 10px;
+      color: var(--gold);
+    }
+
+    .saint-info {
+      margin-top: 20px;
+      padding: 18px;
+      background: #f9f5eb;
+      border-radius: 8px;
+      display: none;
+      border-left: 3px solid var(--gold);
+    }
+
+    /* DILEMMAS */
+    .dilemma {
+      background: #fcfaf6;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      border: 1px solid #e8e0d0;
+    }
+
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .choice-btn {
+      padding: 14px;
+      background: white;
+      border: 1px solid var(--ink);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .choice-btn:hover {
+      background: #fdf6e3;
+    }
+
+    .choice-btn.correct {
+      background: #e8f5e9;
+      border-color: #4caf50;
+      font-weight: bold;
+    }
+
+    .choice-btn.incorrect {
+      background: #ffebee;
+      border-color: #f44336;
+    }
+
+    /* PRAYERS */
+    .prayer-section {
+      margin: 18px 0;
+      padding: 16px;
+      background: #fdfcf8;
+      border-radius: 8px;
+      border-left: 3px solid var(--olive);
+    }
+
+    .prayer-title {
+      font-weight: bold;
+      color: var(--crimson);
+      margin-bottom: 8px;
+    }
+
+    /* ROSARY */
+    .rosary-controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .rosary-btn {
+      padding: 10px 20px;
+      background: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .rosary-display {
+      text-align: center;
+      font-size: 1.2em;
+      margin: 15px 0;
+      min-height: 28px;
+    }
+
+    .beads {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 15px;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .bead {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #d4af37;
+    }
+
+    .bead.prayed {
+      background: #8b0000;
+    }
+
+    /* DAILY VERSE */
+    .verse-box {
+      background: #f0f7f4;
+      padding: 20px;
+      border-radius: 10px;
+      border-left: 4px solid var(--olive);
+      margin: 20px 0;
+      font-style: italic;
+    }
+
+    .verse-ref {
+      display: block;
+      text-align: right;
+      margin-top: 10px;
+      font-weight: bold;
+      color: var(--crimson);
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--ink);
+      font-size: 0.9em;
+      color: var(--olive);
+    }
+
+    /* LITURGICAL SEASON BADGE */
+    .season-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      margin-left: 10px;
+      color: white;
+    }
+
+    .season-advent { background: purple; }
+    .season-lent { background: purple; }
+    .season-christmas { background: red; }
+    .season-easter { background: white; color: var(--ink); }
+    .season-ordinary { background: green; }
+
+    @media (max-width: 600px) {
+      .profile-header { flex-direction: column; }
+      h1 { font-size: 2.1em; }
+      .tabs { gap: 6px; }
+      .tab-btn { padding: 8px 12px; font-size: 0.9em; }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Sanctum: Faith Quest <span id="season-badge" class="season-badge"></span></h1>
+      <div class="profile-header">
+        <div class="profile-pic" id="profile-pic">✝</div>
+        <div class="xp-display">
+          Level <span id="level">1</span> | 
+          XP: <span id="xp">0</span> / <span id="xp-max">100</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="home">Home</button>
+      <button class="tab-btn" data-tab="profile">My Saint</button>
+      <button class="tab-btn" data-tab="quests">Daily Quests</button>
+      <button class="tab-btn" data-tab="calendar">Feast Days</button>
+      <button class="tab-btn" data-tab="dilemmas">Moral Quests</button>
+      <button class="tab-btn" data-tab="prayers">Prayers</button>
+      <button class="tab-btn" data-tab="rosary">Rosary</button>
+    </div>
+
+    <div id="xp-popup" class="xp-popup">+10 XP!</div>
+
+    <!-- HOME -->
+    <div id="home" class="tab-content active">
+      <h2>Welcome, Faithful Friend</h2>
+      <p>You're not alone. Even when no one around you understands, God walks with you.</p>
+      <div class="verse-box" id="daily-verse">
+        Loading today's Scripture...
+      </div>
+      <p><em>"Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go." — Joshua 1:9</em></p>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="profile" class="tab-content">
+      <h2>My Saint & Patron</h2>
+      <p>Choose a biblical hero or saint to walk with you.</p>
+      <div class="profile-customize">
+        <select id="saint-select">
+          <option value="">-- Select Your Saint --</option>
+          <!-- Biblical Figures -->
+          <optgroup label="Biblical Heroes">
+            <option value="✝">Christ the King</option>
+            <option value="👨‍👦">Benjamin (Son of Jacob)</option>
+            <option value="👦">David</option>
+            <option value="⚔️">Judith</option>
+            <option value="🔔">Samuel</option>
+            <option value="🦁">Daniel</option>
+            <option value="🌊">Peter</option>
+            <option value="❤️">John</option>
+            <option value="⚡">Paul</option>
+            <option value="💧">Mary Magdalene</option>
+            <option value="👑">Esther</option>
+            <option value="🕊️">Noah</option>
+          </optgroup>
+          <optgroup label="Saints">
+            <option value="🕊">St. Francis of Assisi</option>
+            <option value="🌹">St. Thérèse of Lisieux</option>
+            <option value="⚔">St. Michael the Archangel</option>
+            <option value="💧">St. Maria Goretti</option>
+            <option value="📚">St. Thomas Aquinas</option>
+            <option value="⚕️">St. Luke</option>
+            <option value="✝">St. Maximilian Kolbe</option>
+            <option value="🕯">St. Lucy</option>
+            <option value="🦁">St. Mark</option>
+            <option value="⚔️">St. Joan of Arc</option>
+            <option value="👑">St. Louis IX</option>
+            <option value="📖">St. Jerome</option>
+          </optgroup>
+          <optgroup label="Martyrs & Modern">
+            <option value="⛓">St. Perpetua</option>
+            <option value="✝">St. Oscar Romero</option>
+            <option value="❤">St. Gianna Beretta Molla</option>
+            <option value="👨‍⚕️">St. Giuseppe Moscati</option>
+          </optgroup>
+        </select>
+        <div>Your saint will appear above as your profile icon.</div>
+      </div>
+    </div>
+
+    <!-- QUESTS -->
+    <div id="quests" class="tab-content">
+      <h2>Daily Holy Quests</h2>
+      <p>Complete these to grow in virtue. Resets at midnight.</p>
+      <div id="quests-list"></div>
+      <button id="add-quest" style="margin-top:15px; padding:8px 15px; background:#8b0000; color:white; border:none; border-radius:5px; cursor:pointer;">+ Add Custom Quest</button>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="calendar" class="tab-content">
+      <h2>Catholic Feast Days</h2>
+      <p>Rite: 
+        <select id="rite-select">
+          <option value="roman">Roman</option>
+          <option value="byzantine">Byzantine</option>
+          <option value="maronite">Maronite</option>
+        </select>
+      </p>
+      <div class="calendar-container">
+        <div id="calendar-view"></div>
+      </div>
+      <div id="saint-info" class="saint-info"></div>
+    </div>
+
+    <!-- DILEMMAS -->
+    <div id="dilemmas" class="tab-content">
+      <h2>Moral Quests</h2>
+      <p>Choose wisely. One attempt per dilemma per day.</p>
+      <div id="dilemma-container"></div>
+    </div>
+
+    <!-- PRAYERS -->
+    <div id="prayers" class="tab-content">
+      <h2>Prayer Vault</h2>
+      <div class="prayer-section">
+        <div class="prayer-title">Our Father</div>
+        <div>Our Father, who art in heaven, hallowed be thy name; thy kingdom come; thy will be done on earth as it is in heaven. Give us this day our daily bread; and forgive us our trespasses as we forgive those who trespass against us; and lead us not into temptation, but deliver us from evil. Amen.</div>
+      </div>
+      <div class="prayer-section">
+        <div class="prayer-title">Hail Mary</div>
+        <div>Hail Mary, full of grace, the Lord is with thee; blessed art thou among women, and blessed is the fruit of thy womb, Jesus. Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.</div>
+      </div>
+      <div class="prayer-section">
+        <div class="prayer-title">Glory Be</div>
+        <div>Glory be to the Father, and to the Son, and to the Holy Spirit. As it was in the beginning, is now, and ever shall be, world without end. Amen.</div>
+      </div>
+      <div class="prayer-section">
+        <div class="prayer-title">Act of Contrition</div>
+        <div>O my God, I am heartily sorry for having offended Thee, and I detest all my sins because of Thy just punishments, but most of all because they offend Thee, my God, Who art all good and deserving of all my love. I firmly resolve, with the help of Thy grace, to sin no more and to avoid the near occasion of sin. Amen.</div>
+      </div>
+    </div>
+
+    <!-- ROSARY -->
+    <div id="rosary" class="tab-content">
+      <h2>Holy Rosary</h2>
+      <p>Pray the mysteries with this digital rosary.</p>
+      <div class="rosary-display" id="rosary-display">Select a mystery to begin</div>
+      <div class="rosary-controls">
+        <button class="rosary-btn" data-mystery="joyful">Joyful</button>
+        <button class="rosary-btn" data-mystery="sorrowful">Sorrowful</button>
+        <button class="rosary-btn" data-mystery="glorious">Glorious</button>
+        <button class="rosary-btn" data-mystery="luminous">Luminous</button>
+      </div>
+      <div class="beads" id="rosary-beads"></div>
+      <div style="text-align:center; margin-top:15px; font-size:0.9em; color:#666;">
+        Click beads to mark as prayed. ★ = Our Father, ● = Hail Mary
+      </div>
+    </div>
+
+    <footer>
+      Sanctum v2 &copy; 2025 | All data saved privately on your device. <br>
+      "I am with you always, to the end of the age." — Matthew 28:20
+    </footer>
+  </div>
+
+  <script>
+    // ===== LITURGICAL CALENDAR LOGIC =====
+    function getLiturgicalSeason(date) {
+      const year = date.getFullYear();
+      // Simplified: detect major seasons
+      const easter = getEaster(year);
+      const adventStart = new Date(year, 11, 25); // Dec 25 - 4 Sundays
+      while (adventStart.getDay() !== 0) adventStart.setDate(adventStart.getDate() - 1);
+      if (adventStart.getMonth() !== 11) adventStart.setDate(adventStart.getDate() - 7);
+      
+      const christmasEnd = new Date(year, 0, 6); // Jan 6
+      const lentStart = new Date(easter);
+      lentStart.setDate(easter.getDate() - 46); // Ash Wednesday
+      const easterEnd = new Date(easter);
+      easterEnd.setDate(easter.getDate() + 50); // Pentecost
+
+      if (date >= adventStart || date < christmasEnd) return { name: "Advent/Christmas", class: "season-christmas" };
+      if (date >= lentStart && date < easter) return { name: "Lent", class: "season-lent" };
+      if (date >= easter && date <= easterEnd) return { name: "Easter", class: "season-easter" };
+      if (date >= new Date(year, 0, 6) && date < lentStart) return { name: "Ordinary Time", class: "season-ordinary" };
+      if (date > easterEnd && date < adventStart) return { name: "Ordinary Time", class: "season-ordinary" };
+      return { name: "Ordinary Time", class: "season-ordinary" };
+    }
+
+    // Calculate Easter (Anonymous Gregorian algorithm)
+    function getEaster(year) {
+      const a = year % 19;
+      const b = Math.floor(year / 100);
+      const c = year % 100;
+      const d = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const month = Math.floor((h + l - 7 * m + 114) / 31);
+      const day = ((h + l - 7 * m + 114) % 31) + 1;
+      return new Date(year, month - 1, day);
+    }
+
+    // ===== DAILY SCRIPTURE (Catholic Lectionary - simplified) =====
+    const DAILY_VERSES = [
+      { ref: "Psalm 23:1", text: "The Lord is my shepherd; I shall not want." },
+      { ref: "Matthew 11:28", text: "Come to me, all you who are weary and burdened, and I will give you rest." },
+      { ref: "Jeremiah 29:11", text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future." },
+      { ref: "Isaiah 41:10", text: "So do not fear, for I am with you; do not be dismayed, for I am your God. I will strengthen you and help you." },
+      { ref: "Philippians 4:13", text: "I can do all things through Christ who strengthens me." },
+      { ref: "Romans 8:28", text: "And we know that in all things God works for the good of those who love him." },
+      { ref: "John 14:27", text: "Peace I leave with you; my peace I give you. I do not give to you as the world gives." }
+    ];
+
+    function getDailyVerse() {
+      const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+      return DAILY_VERSES[dayOfYear % DAILY_VERSES.length];
+    }
+
+    // ===== FEAST DAYS =====
+    const FEAST_DAYS = {
+      roman: {
+        "01-01": { name: "Solemnity of Mary, Mother of God", type: "solemnity", desc: "Mary's divine motherhood is honored." },
+        "01-06": { name: "Epiphany", type: "feast", desc: "The Magi visit the Christ Child." },
+        "02-02": { name: "Presentation of the Lord", type: "feast", desc: "Jesus presented in the Temple." },
+        "03-19": { name: "St. Joseph", type: "solemnity", desc: "Foster father of Jesus." },
+        "04-23": { name: "St. George", type: "memorial", desc: "Martyr and soldier saint." },
+        "05-01": { name: "St. Joseph the Worker", type: "memorial", desc: "Patron of workers." },
+        "06-24": { name: "Nativity of St. John the Baptist", type: "solemnity", desc: "Birth of Jesus' cousin." },
+        "06-29": { name: "Sts. Peter and Paul", type: "solemnity", desc: "Apostles and pillars of the Church." },
+        "07-25": { name: "St. James", type: "feast", desc: "Apostle and martyr." },
+        "08-15": { name: "Assumption of Mary", type: "solemnity", desc: "Mary taken body and soul to heaven." },
+        "08-24": { name: "St. Bartholomew", type: "feast", desc: "Apostle." },
+        "09-21": { name: "St. Matthew", type: "feast", desc: "Evangelist and tax collector." },
+        "09-29": { name: "Sts. Michael, Gabriel, Raphael", type: "feast", desc: "Archangels." },
+        "10-01": { name: "St. Thérèse of Lisieux", type: "memorial", desc: "Doctor of the Church, 'Little Flower'." },
+        "10-04": { name: "St. Francis of Assisi", type: "memorial", desc: "Lover of creation and poverty." },
+        "11-01": { name: "All Saints", type: "solemnity", desc: "All saints in heaven." },
+        "11-02": { name: "All Souls", type: "commemoration", desc: "Prayers for the faithful departed." },
+        "11-30": { name: "St. Andrew", type: "feast", desc: "Apostle." },
+        "12-08": { name: "Immaculate Conception", type: "solemnity", desc: "Mary conceived without sin." },
+        "12-25": { name: "Christmas", type: "solemnity", desc: "Birth of Jesus Christ." }
+      },
+      byzantine: {
+        "01-01": { name: "Circumcision of Christ", type: "feast" },
+        "01-06": { name: "Theophany", type: "solemnity" },
+        "02-02": { name: "Meeting of the Lord", type: "feast" },
+        "03-25": { name: "Annunciation", type: "solemnity" },
+        "08-06": { name: "Transfiguration", type: "solemnity" },
+        "08-15": { name: "Dormition of the Theotokos", type: "solemnity" },
+        "09-14": { name: "Exaltation of the Cross", type: "feast" },
+        "11-21": { name: "Presentation of the Theotokos", type: "feast" },
+        "12-25": { name: "Nativity of Christ", type: "solemnity" }
+      },
+      maronite: {
+        "01-01": { name: "Solemnity of Mary", type: "solemnity" },
+        "02-02": { name: "Presentation", type: "feast" },
+        "03-25": { name: "Annunciation", type: "solemnity" },
+        "05-31": { name: "Visitation", type: "feast" },
+        "08-15": { name: "Assumption", type: "solemnity" },
+        "09-14": { name: "Exaltation of the Cross", type: "feast" },
+        "11-21": { name: "Presentation of Mary", type: "feast" },
+        "12-25": { name: "Christmas", type: "solemnity" }
+      }
+    };
+
+    // ===== MORAL DILEMMAS =====
+    const DILEMMAS = [
+      {
+        question: "Your friend brags about stealing from a store. What do you do?",
+        choices: [
+          { text: "Laugh along to fit in.", correct: false },
+          { text: "Tell him stealing is wrong and ask him to return it.", correct: true },
+          { text: "Ignore it—it’s not your problem.", correct: false }
+        ]
+      },
+      {
+        question: "You see someone being bullied at school. Do you…",
+        choices: [
+          { text: "Join in to be popular.", correct: false },
+          { text: "Walk away quickly.", correct: false },
+          { text: "Stand with them or get a teacher.", correct: true }
+        ]
+      },
+      {
+        question: "You promised to pray for a sick friend, but forgot. Later, you remember.",
+        choices: [
+          { text: "It’s too late—skip it.", correct: false },
+          { text: "Pray for them now and ask forgiveness for forgetting.", correct: true },
+          { text: "Make an excuse why you didn’t.", correct: false }
+        ]
+      },
+      {
+        question: "You're tempted to look at something inappropriate online. You know it's wrong.",
+        choices: [
+          { text: "Just this once won't hurt.", correct: false },
+          { text: "Close it immediately and pray for purity.", correct: true },
+          { text: "Tell yourself you're only curious.", correct: false }
+        ]
+      }
+    ];
+
+    // ===== DEFAULT QUESTS =====
+    const DEFAULT_QUESTS = [
+      "Pray the Morning Offering",
+      "Read 1 chapter of the Bible",
+      "Say 1 decade of the Rosary",
+      "Do one act of kindness",
+      "Examine your conscience"
+    ];
+
+    // ===== APP STATE =====
+    let appState = {
+      xp: 0,
+      level: 1,
+      saint: "✝",
+      quests: DEFAULT_QUESTS.map(q => ({ text: q, completed: false, lastCompleted: "" })),
+      completedDilemmas: {},
+      customQuests: [],
+      rosary: { mystery: "", beads: [] },
+      lastVerseDate: "",
+      verse: ""
+    };
+
+    // ===== UTILS =====
+    function todayStr() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function showXP(amount) {
+      const popup = document.getElementById('xp-popup');
+      popup.textContent = `+${amount} XP!`;
+      popup.style.animation = 'none';
+      popup.offsetHeight;
+      popup.style.animation = 'xpFloat 1.3s forwards';
+    }
+
+    function addXP(amount) {
+      // Cap daily XP to prevent spamming
+      const today = todayStr();
+      if (!appState.dailyXP) appState.dailyXP = { date: today, total: 0 };
+      if (appState.dailyXP.date !== today) {
+        appState.dailyXP = { date: today, total: 0 };
+      }
+      if (appState.dailyXP.total >= 150) return; // max per day
+
+      appState.xp += amount;
+      appState.dailyXP.total += amount;
+      const xpMax = appState.level * 100;
+      if (appState.xp >= xpMax) {
+        appState.level++;
+        appState.xp = appState.xp - xpMax;
+        showXP(amount + " (Level Up!)");
+      } else {
+        showXP(amount);
+      }
+      saveState();
+      renderXP();
+    }
+
+    function saveState() {
+      localStorage.setItem('sanctumFaithQuestV2', JSON.stringify(appState));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem('sanctumFaithQuestV2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Merge with defaults to avoid breakage on update
+        appState = { ...appState, ...parsed };
+        if (!appState.dailyXP) appState.dailyXP = { date: "", total: 0 };
+      }
+    }
+
+    function renderXP() {
+      document.getElementById('xp').textContent = appState.xp;
+      document.getElementById('level').textContent = appState.level;
+      document.getElementById('xp-max').textContent = appState.level * 100;
+    }
+
+    function renderProfile() {
+      document.getElementById('profile-pic').textContent = appState.saint;
+    }
+
+    function renderSeason() {
+      const season = getLiturgicalSeason(new Date());
+      const badge = document.getElementById('season-badge');
+      badge.textContent = season.name;
+      badge.className = 'season-badge ' + season.class;
+    }
+
+    function renderDailyVerse() {
+      const today = todayStr();
+      if (appState.lastVerseDate !== today) {
+        const verse = getDailyVerse();
+        appState.verse = verse.text;
+        appState.verseRef = verse.ref;
+        appState.lastVerseDate = today;
+        saveState();
+      }
+      document.getElementById('daily-verse').innerHTML = 
+        `"${appState.verse}"<span class="verse-ref">— ${appState.verseRef}</span>`;
+    }
+
+    // ===== TAB HANDLING =====
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+        
+        if (tabId === 'profile') renderProfile();
+        if (tabId === 'quests') renderQuests();
+        if (tabId === 'calendar') renderCalendar();
+        if (tabId === 'dilemmas') renderDilemmas();
+        if (tabId === 'rosary') renderRosary();
+      });
+    });
+
+    // ===== PROFILE =====
+    document.getElementById('saint-select').addEventListener('change', (e) => {
+      appState.saint = e.target.value || "✝";
+      saveState();
+      renderProfile();
+    });
+
+    // ===== QUESTS =====
+    function renderQuests() {
+      const today = todayStr();
+      const listEl = document.getElementById('quests-list');
+      listEl.innerHTML = '';
+
+      appState.quests.forEach(q => {
+        if (q.lastCompleted !== today) q.completed = false;
+      });
+
+      appState.quests.forEach((quest, i) => {
+        const div = document.createElement('div');
+        div.className = 'quest-item';
+        div.innerHTML = `
+          <input type="checkbox" class="quest-check" ${quest.completed ? 'checked' : ''} data-index="${i}">
+          <span>${quest.text}</span>
+        `;
+        listEl.appendChild(div);
+      });
+
+      document.getElementById('add-quest').onclick = () => {
+        const text = prompt("Enter your custom quest:");
+        if (text && text.trim()) {
+          appState.quests.push({
+            text: text.trim(),
+            completed: false,
+            lastCompleted: ""
+          });
+          saveState();
+          renderQuests();
+        }
+      };
+
+      document.querySelectorAll('.quest-check').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          const i = e.target.getAttribute('data-index');
+          const quest = appState.quests[i];
+          quest.completed = e.target.checked;
+          if (quest.completed) {
+            quest.lastCompleted = todayStr();
+            addXP(15);
+          }
+          saveState();
+        });
+      });
+    }
+
+    // ===== CALENDAR =====
+    function renderCalendar() {
+      const rite = document.getElementById('rite-select').value;
+      const feasts = FEAST_DAYS[rite] || FEAST_DAYS.roman;
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const daysInMonth = lastDay.getDate();
+
+      let html = `<table class="calendar"><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr><tr>`;
+      let dayOfWeek = firstDay.getDay();
+
+      for (let i = 0; i < dayOfWeek; i++) {
+        html += '<td></td>';
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        if ((day + dayOfWeek - 1) % 7 === 0 && day > 1) html += '</tr><tr>';
+        const dateStr = `${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isFeast = feasts[dateStr];
+        const isToday = day === today.getDate() && month === today.getMonth();
+        const cellClass = isFeast ? 'feast-day' : '';
+        const bgColor = isToday ? 'background-color:#fdf6e3;' : '';
+        html += `<td style="${bgColor}" class="${cellClass}" data-date="${dateStr}">${day}${isFeast ? '' : ''}</td>`;
+      }
+      html += '</tr></table>';
+      document.getElementById('calendar-view').innerHTML = html;
+
+      document.querySelectorAll('.feast-day').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const date = cell.getAttribute('data-date');
+          const feast = feasts[date];
+          if (feast) {
+            document.getElementById('saint-info').innerHTML = `
+              <h3>${feast.name}</h3>
+              <p><strong>Type:</strong> ${feast.type.charAt(0).toUpperCase() + feast.type.slice(1)}</p>
+              <p>${feast.desc || ''}</p>
+            `;
+            document.getElementById('saint-info').style.display = 'block';
+          }
+        });
+      });
+    }
+
+    document.getElementById('rite-select').addEventListener('change', renderCalendar);
+
+    // ===== DILEMMAS =====
+    function renderDilemmas() {
+      const container = document.getElementById('dilemma-container');
+      const today = todayStr();
+      
+      let available = [];
+      DILEMMAS.forEach((d, i) => {
+        if (appState.completedDilemmas[i] !== today) {
+          available.push({ dilemma: d, index: i });
+        }
+      });
+
+      if (available.length === 0) {
+        container.innerHTML = "<p>All moral quests completed for today! Come back tomorrow.</p>";
+        return;
+      }
+
+      const { dilemma, index } = available[0];
+      let html = `<div class="dilemma"><h3>${dilemma.question}</h3><div class="choices">`;
+      dilemma.choices.forEach((choice, i) => {
+        html += `<button class="choice-btn" data-dilemma="${index}" data-choice="${i}">${choice.text}</button>`;
+      });
+      html += '</div></div>';
+      container.innerHTML = html;
+
+      document.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const dIndex = parseInt(e.target.getAttribute('data-dilemma'));
+          const cIndex = parseInt(e.target.getAttribute('data-choice'));
+          const choice = dilemma.choices[cIndex];
+          
+          if (appState.completedDilemmas[dIndex] === today) return;
+
+          appState.completedDilemmas[dIndex] = today;
+          saveState();
+          
+          document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+          e.target.classList.add(choice.correct ? 'correct' : 'incorrect');
+          
+          if (choice.correct) {
+            setTimeout(() => addXP(25), 500);
+          }
+        });
+      });
+    }
+
+    // ===== ROSARY =====
+    const MYSTERIES = {
+      joyful: ["Annunciation", "Visitation", "Nativity", "Presentation", "Finding in Temple"],
+      sorrowful: ["Agony in Garden", "Scourging", "Crowning with Thorns", "Carry Cross", "Crucifixion"],
+      glorious: ["Resurrection", "Ascension", "Descent of Holy Spirit", "Assumption", "Coronation"],
+      luminous: ["Baptism", "Wedding at Cana", "Proclamation of Kingdom", "Transfiguration", "Institution of Eucharist"]
+    };
+
+    function renderRosary() {
+      document.querySelectorAll('.rosary-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const mystery = e.target.getAttribute('data-mystery');
+          appState.rosary.mystery = mystery;
+          appState.rosary.beads = Array(53).fill(false); // 5 decades + Our Fathers
+          saveState();
+          renderRosaryBeads(mystery);
+        });
+      });
+    }
+
+    function renderRosaryBeads(mystery) {
+      const container = document.getElementById('rosary-beads');
+      const display = document.getElementById('rosary-display');
+      if (!mystery) {
+        container.innerHTML = '';
+        display.textContent = "Select a mystery to begin";
+        return;
+      }
+
+      display.textContent = `Praying the ${mystery.charAt(0).toUpperCase() + mystery.slice(1)} Mysteries`;
+      container.innerHTML = '';
+
+      // 1 Our Father
+      const of = document.createElement('div');
+      of.className = `bead${appState.rosary.beads[0] ? ' prayed' : ''}`;
+      of.title = "Our Father";
+      of.textContent = "★";
+      of.onclick = () => toggleBead(0);
+      container.appendChild(of);
+
+      // 10 Hail Marys per decade
+      for (let decade = 0; decade < 5; decade++) {
+        const mysteryName = MYSTERIES[mystery][decade];
+        for (let i = 0; i < 10; i++) {
+          const idx = 1 + decade * 10 + i;
+          const bead = document.createElement('div');
+          bead.className = `bead${appState.rosary.beads[idx] ? ' prayed' : ''}`;
+          bead.title = `Hail Mary (${mysteryName})`;
+          bead.textContent = "●";
+          bead.onclick = () => toggleBead(idx);
+          container.appendChild(bead);
+        }
+        // Our Father between decades
+        if (decade < 4) {
+          const ofDecade = document.createElement('div');
+          ofDecade.className = `bead${appState.rosary.beads[1 + (decade + 1) * 10] ? ' prayed' : ''}`;
+          ofDecade.title = "Our Father";
+          ofDecade.textContent = "★";
+          ofDecade.onclick = () => toggleBead(1 + (decade + 1) * 10);
+          container.appendChild(ofDecade);
+        }
+      }
+    }
+
+    function toggleBead(index) {
+      appState.rosary.beads[index] = !appState.rosary.beads[index];
+      if (appState.rosary.beads[index]) {
+        addXP(2); // small reward for prayer
+      }
+      saveState();
+      renderRosaryBeads(appState.rosary.mystery);
+    }
+
+    // ===== INIT =====
+    loadState();
+    renderXP();
+    renderProfile();
+    renderSeason();
+    renderDailyVerse();
+    renderCalendar();
+
+    // Set initial saint select
+    document.getElementById('saint-select').value = appState.saint;
+
+    // Auto-refresh at midnight (simplified)
+    setInterval(() => {
+      const now = new Date();
+      if (now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
+        renderQuests();
+        renderDailyVerse();
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
